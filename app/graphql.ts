@@ -3,9 +3,12 @@ import { defer, json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import type { Params } from "@remix-run/react";
 
-export interface EntryPoint {
-  query?: Query<unknown, unknown>;
-  deferredQueries?: Record<string, Query<unknown, unknown>>;
+export interface EntryPoint<
+  Query extends EntryPointQuery<unknown, unknown>,
+  DeferredQueries extends Record<string, EntryPointQuery<unknown, unknown>>
+> {
+  query: Query;
+  deferredQueries?: DeferredQueries;
 }
 
 export type QueryArgs = {
@@ -13,45 +16,58 @@ export type QueryArgs = {
   searchParams: URLSearchParams;
 };
 
-export interface Query<TQuery, TVariables> {
+export interface EntryPointQuery<TData, TVariables> {
   query: string;
-  variables: (args: QueryArgs) => TVariables;
-  " $query"?: TQuery;
+  variables?: (args: QueryArgs) => TVariables;
+  " $data": TData;
 }
 
 export const graphql =
   <TQuery, TVariables>(templates: TemplateStringsArray) =>
-  (variables: (args: QueryArgs) => TVariables): Query<TQuery, TVariables> => {
+  (
+    variables?: (args: QueryArgs) => TVariables
+  ): EntryPointQuery<TQuery, TVariables> => {
     return {
       query: templates[0] as string,
       variables,
-    };
+    } as EntryPointQuery<TQuery, TVariables>;
   };
 
-// TODO: Type this bad boy out
-export function useQuery<TEntryPoint extends EntryPoint>(
-  entryPoint: TEntryPoint
-): {
-  data: Required<Required<TEntryPoint>["query"]>[" $query"];
-  deferredData: {
-    [key in keyof TEntryPoint["deferredQueries"]]: Promise<
-      Required<Required<TEntryPoint>["deferredQueries"]>[" $query"]
-    >;
-  };
+type Critical<TEntryPoint> = TEntryPoint extends EntryPoint<infer Data, any>
+  ? NonNullable<Data[" $data"]>
+  : never;
+
+type Deferred<TEntryPoint> = TEntryPoint extends EntryPoint<any, infer Deferred>
+  ? {
+      [K in keyof Deferred]: Deferred[K] extends EntryPointQuery<
+        infer Data,
+        any
+      >
+        ? Promise<Data>
+        : never;
+    }
+  : never;
+
+export function useEntryPoint<
+  TEntryPoint extends EntryPoint<
+    any,
+    Record<string, EntryPointQuery<unknown, unknown>>
+  >
+>(): {
+  data: Critical<TEntryPoint>;
+  deferredData: Deferred<TEntryPoint>;
 } {
   let { criticalData, ...rest } = useLoaderData();
 
   return {
     data: criticalData,
-    deferredData: Object.entries(rest as Record<string, any>).reduce(
-      (acc, [key, value]) => {
-        if (key.startsWith("__") && typeof value?.then === "function") {
-          acc[key.slice(2)] = value;
-        }
-        return acc;
-      },
-      {} as Record<string, Promise<unknown>>
-    ),
+    deferredData: Object.entries(rest).reduce((acc, [key, value]) => {
+      const promise = value as Promise<unknown>;
+      if (key.startsWith("__") && typeof promise?.then === "function") {
+        acc[key.slice(2)] = promise;
+      }
+      return acc;
+    }, {} as Record<string, Promise<unknown>>) as any,
   };
 }
 
@@ -84,18 +100,21 @@ async function runQuery(query: string, variables: unknown, headers: Headers) {
   return body.data;
 }
 
-export async function runEntryPoint(args: LoaderArgs, entryPoint: EntryPoint) {
+export async function runEntryPoint<TEntryPoint extends EntryPoint<any, any>>(
+  args: LoaderArgs,
+  entryPoint: TEntryPoint
+) {
   const searchParams = new URL(args.request.url).searchParams;
 
   const headers = new Headers();
   headers.set("Content-Type", "application/json");
   headers.set("Authorization", `bearer ${process.env.GITHUB_PAT}`);
 
-  let criticalPromise;
+  let criticalPromise: Promise<Critical<TEntryPoint>> | undefined;
   if (entryPoint.query) {
     criticalPromise = runQuery(
       entryPoint.query.query,
-      entryPoint.query.variables({
+      entryPoint.query.variables?.({
         params: args.params,
         searchParams,
       }),
@@ -105,10 +124,13 @@ export async function runEntryPoint(args: LoaderArgs, entryPoint: EntryPoint) {
 
   let deferredPromises: Record<string, Promise<unknown>> = {};
   if (entryPoint.deferredQueries) {
-    for (let [name, query] of Object.entries(entryPoint.deferredQueries)) {
+    for (let [name, query] of Object.entries(entryPoint.deferredQueries) as [
+      string,
+      EntryPointQuery<any, any>
+    ][]) {
       deferredPromises["__" + name] = runQuery(
         query.query,
-        query.variables({
+        query.variables?.({
           params: args.params,
           searchParams,
         }),

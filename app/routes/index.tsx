@@ -2,41 +2,16 @@ import { Suspense } from "react";
 import { Await } from "@remix-run/react";
 import type { LoaderArgs } from "@remix-run/node";
 
-import type { EntryPoint } from "~/graphql";
-import { graphql, runEntryPoint, useQuery } from "~/graphql";
+import { runEntryPoint, useEntryPoint } from "~/graphql";
+import { entryPoint } from "./index.query";
 
-export const loader = (args: LoaderArgs) => runEntryPoint(args, GraphQL);
-
-export const GraphQL: EntryPoint = {
-  query: graphql`
-    query IndexCriticalQuery {
-      viewer {
-        bioHTML
-        name
-      }
-    }
-  `((params) => ({})),
-  deferredQueries: {
-    followers: graphql`
-      query IndexDeferredFollowers {
-        viewer {
-          followers(first: 5) {
-            nodes {
-              login
-              name
-            }
-          }
-        }
-      }
-    `((params) => ({})),
-  },
-};
+export const loader = (args: LoaderArgs) => runEntryPoint(args, entryPoint);
 
 export default function Index() {
   const {
     data,
     deferredData: { followers },
-  } = useQuery(GraphQL);
+  } = useEntryPoint<typeof entryPoint>();
 
   return (
     <div>
