@@ -1,4 +1,3 @@
-import { Link, Outlet } from "@remix-run/react";
 import type { LoaderArgs } from "@remix-run/node";
 
 import { runEntryPoint, useEntryPoint } from "~/graphql";
@@ -8,7 +7,7 @@ export function loader(args: LoaderArgs) {
   return runEntryPoint(args, entryPoint);
 }
 
-export default function RepoLayout() {
+export default function RepoIndex() {
   const { data } = useEntryPoint<typeof entryPoint>();
 
   // TODO: Introduce a way in the entrypoint or query to filter data / throw response.
