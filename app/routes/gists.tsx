@@ -20,20 +20,13 @@ export default function Gists() {
         <input type="hidden" name="intent" value="like" />
       </form>
       <ul>
-        {data.viewer.gists.edges?.map((edge) => {
-          if (!edge?.node) {
-            return null;
-          }
-
-          const { description, id, url } = edge.node;
-          return (
-            <li key={id}>
-              <a href={url} rel="noopener noreferrer" target="_blank">
-                {description}
-              </a>
-            </li>
-          );
-        })}
+        {data.gists.map(({ description, id, url }) => (
+          <li key={id}>
+            <a href={url} rel="noopener noreferrer" target="_blank">
+              {description}
+            </a>
+          </li>
+        ))}
       </ul>
     </div>
   );

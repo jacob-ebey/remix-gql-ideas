@@ -10,11 +10,6 @@ export function loader(args: LoaderArgs) {
 export default function RepoIndex() {
   const { data } = useEntryPoint<typeof entryPoint>();
 
-  // TODO: Introduce a way in the entrypoint or query to filter data / throw response.
-  if (!data.repository) {
-    return <h1>Repository not found</h1>;
-  }
-
   const { stargazerCount } = data.repository;
 
   return (

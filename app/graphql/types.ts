@@ -25752,4 +25752,4 @@ export type IndexCriticalQueryQuery = { __typename?: 'Query', viewer: { __typena
 export type IndexDeferredFollowersQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type IndexDeferredFollowersQueryQuery = { __typename?: 'Query', viewer: { __typename?: 'User', followers: { __typename?: 'FollowerConnection', nodes?: Array<{ __typename?: 'User', login: string, name?: string | null } | null> | null } } };
+export type IndexDeferredFollowersQueryQuery = { __typename?: 'Query', viewer: { __typename?: 'User', followers: { __typename?: 'FollowerConnection', edges?: Array<{ __typename?: 'UserEdge', node?: { __typename?: 'User', login: string, name?: string | null } | null } | null> | null } } };

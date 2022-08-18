@@ -1,4 +1,6 @@
+import { json } from "@remix-run/node";
 import type { Params } from "@remix-run/react";
+
 import { graphql } from "~/graphql";
 import type {
   CreateIssueMutationMutation,
@@ -11,17 +13,27 @@ export const entryPoint = {
   query: graphql<
     RepoNewIssueQueryQuery,
     RepoNewIssueQueryQueryVariables,
-    Params<"repo" | "org">
+    Params<"repo" | "org">,
+    { repository: NonNullable<RepoNewIssueQueryQuery["repository"]> }
   >`
     query RepoNewIssueQuery($name: String!, $owner: String!) {
       repository(name: $name, owner: $owner) {
         id
       }
     }
-  `(({ params }) => ({
-    name: params.repo!,
-    owner: params.org!,
-  })),
+  `({
+    variables: ({ params }) => ({
+      name: params.repo!,
+      owner: params.org!,
+    }),
+    filter: (data) => {
+      if (!data.repository) {
+        throw json("Repo not found", 404);
+      }
+
+      return { repository: data.repository };
+    },
+  }),
   mutations: {
     createIssue: graphql<
       CreateIssueMutationMutation,
@@ -39,10 +51,12 @@ export const entryPoint = {
           clientMutationId
         }
       }
-    `(({ formData }) => ({
-      repositoryId: formData.get("repositoryId")!,
-      title: formData.get("title")!,
-      body: formData.get("body"),
-    })),
+    `({
+      variables: ({ formData }) => ({
+        repositoryId: formData.get("repositoryId")!,
+        title: formData.get("title")!,
+        body: formData.get("body"),
+      }),
+    }),
   },
 };

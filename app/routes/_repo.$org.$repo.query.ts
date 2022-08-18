@@ -1,4 +1,6 @@
+import { json } from "@remix-run/node";
 import type { Params } from "@remix-run/react";
+
 import { graphql } from "~/graphql";
 import type {
   RepoLayoutQueryQuery,
@@ -9,7 +11,8 @@ export const entryPoint = {
   query: graphql<
     RepoLayoutQueryQuery,
     RepoLayoutQueryQueryVariables,
-    Params<"repo" | "org">
+    Params<"repo" | "org">,
+    { repository: NonNullable<RepoLayoutQueryQuery["repository"]> }
   >`
     query RepoLayoutQuery($name: String!, $owner: String!) {
       repository(name: $name, owner: $owner) {
@@ -20,8 +23,17 @@ export const entryPoint = {
         }
       }
     }
-  `(({ params }) => ({
-    name: params.repo!,
-    owner: params.org!,
-  })),
+  `({
+    variables: ({ params }) => ({
+      name: params.repo!,
+      owner: params.org!,
+    }),
+    filter: ({ repository }) => {
+      if (!repository) {
+        throw json("Repo not found", 404);
+      }
+
+      return { repository };
+    },
+  }),
 };

@@ -2,12 +2,21 @@ import { graphql } from "~/graphql";
 import type {
   IndexCriticalQueryQuery,
   IndexCriticalQueryQueryVariables,
+  IndexDeferredFollowersQueryQuery,
+  IndexDeferredFollowersQueryQueryVariables,
 } from "~/graphql/types";
 
-type IndexDeferredFollowersQueryData = {
-  viewer: { followers: { nodes: { login: string; name: string }[] } };
-};
-type IndexDeferredFollowersQueryVariables = {};
+type NonNullableFollower = NonNullable<
+  NonNullable<
+    NonNullable<
+      NonNullable<
+        NonNullable<
+          IndexDeferredFollowersQueryQuery["viewer"]
+        >["followers"]["edges"]
+      >[number]
+    >["node"]
+  >
+>;
 
 export const entryPoint = {
   query: graphql<IndexCriticalQueryQuery, IndexCriticalQueryQueryVariables>`
@@ -20,19 +29,33 @@ export const entryPoint = {
   `(),
   deferredQueries: {
     followers: graphql<
-      IndexDeferredFollowersQueryData,
-      IndexDeferredFollowersQueryVariables
+      IndexDeferredFollowersQueryQuery,
+      IndexDeferredFollowersQueryQueryVariables,
+      {},
+      NonNullableFollower[]
     >`
       query IndexDeferredFollowersQuery {
         viewer {
           followers(first: 5) {
-            nodes {
-              login
-              name
+            edges {
+              node {
+                login
+                name
+              }
             }
           }
         }
       }
-    `(),
+    `({
+      filter: ({ viewer }) => {
+        if (!viewer.followers.edges) {
+          return [];
+        }
+
+        return viewer.followers.edges
+          .map((edge) => edge?.node)
+          .filter(Boolean) as NonNullableFollower[];
+      },
+    }),
   },
 };

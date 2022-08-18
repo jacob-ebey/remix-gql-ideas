@@ -16,11 +16,6 @@ export default function NewIssue() {
   const { data } = useEntryPoint<typeof entryPoint>();
   const { org, repo } = useParams<"org" | "repo">();
 
-  // TODO: Introduce a way in the entrypoint or query to filter data / throw response.
-  if (!data.repository) {
-    return <h1>Repository not found</h1>;
-  }
-
   const { id } = data.repository;
 
   return (

@@ -22,13 +22,19 @@ export default function Index() {
 
       <Suspense fallback="Loading followers...">
         <Await resolve={followers}>
-          {(followersData) => (
-            <ul>
-              {followersData.viewer.followers.nodes.map((follower) => (
-                <li key={follower.login}>{follower.name || follower.login}</li>
-              ))}
-            </ul>
-          )}
+          {(followers) =>
+            !followers.length ? (
+              <p>No followers...</p>
+            ) : (
+              <ul>
+                {followers.map((follower) => (
+                  <li key={follower.login}>
+                    {follower.name || follower.login}
+                  </li>
+                ))}
+              </ul>
+            )
+          }
         </Await>
       </Suspense>
 

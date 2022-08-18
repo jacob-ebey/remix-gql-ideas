@@ -1,5 +1,4 @@
-import { Suspense } from "react";
-import { Await, Link, Outlet } from "@remix-run/react";
+import { Link, Outlet } from "@remix-run/react";
 import type { LoaderArgs } from "@remix-run/node";
 
 import { runEntryPoint, useEntryPoint } from "~/graphql";
@@ -11,11 +10,6 @@ export function loader(args: LoaderArgs) {
 
 export default function RepoLayout() {
   const { data } = useEntryPoint<typeof entryPoint>();
-
-  // TODO: Introduce a way in the entrypoint or query to filter data / throw response.
-  if (!data.repository) {
-    return <h1>Repository not found</h1>;
-  }
 
   const { name, owner } = data.repository;
 

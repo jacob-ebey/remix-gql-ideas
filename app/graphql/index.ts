@@ -20,31 +20,49 @@ export type QueryArgs<TParams extends Params> = {
   formData: URLSearchParams;
 };
 
-export interface EntryPointQuery<TData, TVariables, TParams extends Params> {
+export interface EntryPointQuery<
+  TData,
+  TVariables,
+  TParams extends Params,
+  TFilteredData = TData
+> {
   query: string;
+  filter?: (data: TData) => TFilteredData;
   variables?: (args: QueryArgs<TParams>) => TVariables;
-  " $data": TData;
+  " $data": TFilteredData;
 }
 
 export const graphql =
-  <TQuery, TVariables, TParams extends Params = Params>(
+  <TData, TVariables, TParams extends Params = Params, TFilteredData = TData>(
     templates: TemplateStringsArray
   ) =>
-  (
-    variables?: (args: QueryArgs<TParams>) => TVariables
-  ): EntryPointQuery<TQuery, TVariables, TParams> => {
+  ({
+    filter,
+    variables,
+  }: {
+    filter?: (data: TData) => TFilteredData;
+    variables?: (args: QueryArgs<TParams>) => TVariables;
+  } = {}): EntryPointQuery<
+    TFilteredData,
+    TVariables,
+    TParams,
+    TFilteredData
+  > => {
     return {
       query: templates[0] as string,
+      filter,
       variables,
-    } as EntryPointQuery<TQuery, TVariables, TParams>;
+    } as EntryPointQuery<TFilteredData, TVariables, TParams, TFilteredData>;
   };
 
 type Critical<TEntryPoint> = TEntryPoint extends EntryPoint<
-  infer Data,
+  infer Query,
   any,
   any
 >
-  ? UseDataFunctionReturn<Data[" $data"]>
+  ? Query extends EntryPointQuery<any, any, any, infer TData>
+    ? TData
+    : never
   : never;
 
 type Deferred<TEntryPoint> = TEntryPoint extends EntryPoint<
@@ -54,9 +72,10 @@ type Deferred<TEntryPoint> = TEntryPoint extends EntryPoint<
 >
   ? {
       [K in keyof Deferred]: Deferred[K] extends EntryPointQuery<
-        infer Data,
         any,
-        any
+        any,
+        any,
+        infer Data
       >
         ? Promise<UseDataFunctionReturn<Data>>
         : never;
@@ -66,7 +85,7 @@ type Deferred<TEntryPoint> = TEntryPoint extends EntryPoint<
 export function useEntryPoint<
   TEntryPoint extends EntryPoint<
     any,
-    Record<string, EntryPointQuery<any, any, any>>,
+    Record<string, EntryPointQuery<any, any, any, any>>,
     any
   >
 >(): {
@@ -87,7 +106,12 @@ export function useEntryPoint<
   };
 }
 
-async function runQuery(query: string, variables: unknown, headers: Headers) {
+async function runQuery(
+  query: string,
+  variables: unknown,
+  headers: Headers,
+  filter?: (data: any) => any
+) {
   if (query.match(/IndexDeferredFollowers/)) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
@@ -110,10 +134,11 @@ async function runQuery(query: string, variables: unknown, headers: Headers) {
   let body = await response.json();
 
   if (body.errors) {
-    throw json(body.errors, 500);
+    let status = body.errors[0]?.type === "NOT_FOUND" ? 404 : 500;
+    throw json(body.errors, status);
   }
 
-  return body.data;
+  return filter ? filter(body.data) : body.data;
 }
 
 export async function runEntryPoint<
@@ -136,7 +161,8 @@ export async function runEntryPoint<
           searchParams,
           formData: new URLSearchParams(),
         }),
-        headers
+        headers,
+        entryPoint.query.filter
       );
     }
 
@@ -153,7 +179,8 @@ export async function runEntryPoint<
             searchParams,
             formData: new URLSearchParams(),
           }),
-          headers
+          headers,
+          query.filter
         );
       }
     }
@@ -181,7 +208,8 @@ export async function runEntryPoint<
         searchParams,
         formData,
       }),
-      headers
+      headers,
+      query.filter
     );
 
     // TODO: Validate redirect
