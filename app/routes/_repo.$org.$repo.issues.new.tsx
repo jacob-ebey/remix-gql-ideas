@@ -12,7 +12,7 @@ export function loader(args: LoaderArgs) {
   return runEntryPoint(args, entryPoint);
 }
 
-export default function RepoLayout() {
+export default function NewIssue() {
   const { data } = useEntryPoint<typeof entryPoint>();
   const { org, repo } = useParams<"org" | "repo">();
 

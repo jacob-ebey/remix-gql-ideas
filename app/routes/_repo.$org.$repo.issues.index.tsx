@@ -8,7 +8,7 @@ export function loader(args: LoaderArgs) {
   return runEntryPoint(args, entryPoint);
 }
 
-export default function RepoLayout() {
+export default function RepoIssues() {
   const { data } = useEntryPoint<typeof entryPoint>();
 
   // TODO: Introduce a way in the entrypoint or query to filter data / throw response.

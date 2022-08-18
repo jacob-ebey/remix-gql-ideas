@@ -25706,6 +25706,14 @@ export type RepoIndexQueryQueryVariables = Exact<{
 
 export type RepoIndexQueryQuery = { __typename?: 'Query', repository?: { __typename?: 'Repository', stargazerCount: number } | null };
 
+export type RepoIssuesQueryQueryVariables = Exact<{
+  name: Scalars['String'];
+  owner: Scalars['String'];
+}>;
+
+
+export type RepoIssuesQueryQuery = { __typename?: 'Query', repository?: { __typename?: 'Repository', issues: { __typename?: 'IssueConnection', edges?: Array<{ __typename?: 'IssueEdge', node?: { __typename?: 'Issue', id: string, number: number, title: string, author?: { __typename?: 'Bot', avatarUrl: any, login: string } | { __typename?: 'EnterpriseUserAccount', avatarUrl: any, login: string } | { __typename?: 'Mannequin', avatarUrl: any, login: string } | { __typename?: 'Organization', avatarUrl: any, login: string } | { __typename?: 'User', avatarUrl: any, login: string } | null } | null } | null> | null } } | null };
+
 export type RepoNewIssueQueryQueryVariables = Exact<{
   name: Scalars['String'];
   owner: Scalars['String'];
@@ -25722,14 +25730,6 @@ export type CreateIssueMutationMutationVariables = Exact<{
 
 
 export type CreateIssueMutationMutation = { __typename?: 'Mutation', createIssue?: { __typename?: 'CreateIssuePayload', clientMutationId?: string | null } | null };
-
-export type RepoIssuesQueryQueryVariables = Exact<{
-  name: Scalars['String'];
-  owner: Scalars['String'];
-}>;
-
-
-export type RepoIssuesQueryQuery = { __typename?: 'Query', repository?: { __typename?: 'Repository', issues: { __typename?: 'IssueConnection', edges?: Array<{ __typename?: 'IssueEdge', node?: { __typename?: 'Issue', id: string, number: number, title: string, author?: { __typename?: 'Bot', avatarUrl: any, login: string } | { __typename?: 'EnterpriseUserAccount', avatarUrl: any, login: string } | { __typename?: 'Mannequin', avatarUrl: any, login: string } | { __typename?: 'Organization', avatarUrl: any, login: string } | { __typename?: 'User', avatarUrl: any, login: string } | null } | null } | null> | null } } | null };
 
 export type RepoLayoutQueryQueryVariables = Exact<{
   name: Scalars['String'];
