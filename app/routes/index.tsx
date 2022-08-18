@@ -1,12 +1,11 @@
 import { Suspense } from "react";
 import { Await } from "@remix-run/react";
+import type { LoaderArgs } from "@remix-run/node";
 
 import type { EntryPoint } from "~/graphql";
-import { graphql, useQuery } from "~/graphql";
+import { graphql, runEntryPoint, useQuery } from "~/graphql";
 
-// This can probably be removed as a requirement, but for now
-// this is required to tell the client runtime a loader exists for the route.
-export const loader = () => "OOPS";
+export const loader = (args: LoaderArgs) => runEntryPoint(args, GraphQL);
 
 export const GraphQL: EntryPoint = {
   query: graphql`
@@ -33,9 +32,6 @@ export const GraphQL: EntryPoint = {
   },
 };
 
-type CriticalQuery = any;
-type DeferredFollowersQuery = any;
-
 export default function Index() {
   const {
     data,
@@ -58,6 +54,10 @@ export default function Index() {
           )}
         </Await>
       </Suspense>
+
+      <form>
+        <input type="hidden" name="intent" value="like" />
+      </form>
     </div>
   );
 }

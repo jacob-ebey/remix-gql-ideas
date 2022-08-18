@@ -1,4 +1,7 @@
+import type { LoaderArgs } from "@remix-run/node";
+import { defer, json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import type { Params } from "@remix-run/react";
 
 export interface EntryPoint {
   query?: Query<unknown, unknown>;
@@ -6,7 +9,7 @@ export interface EntryPoint {
 }
 
 export type QueryArgs = {
-  params: Record<string, string>;
+  params: Params;
   searchParams: URLSearchParams;
 };
 
@@ -52,8 +55,70 @@ export function useQuery<TEntryPoint extends EntryPoint>(
   };
 }
 
-// export function useQuery<T extends Query<unknown, unknown>>(
-//   thing: T
-// ): Required<T>[" $query"] {
-//   return {} as any;
-// }
+async function runQuery(query: string, variables: unknown, headers: Headers) {
+  if (query.match(/IndexDeferredFollowers/)) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
+  let response = await fetch("https://api.github.com/graphql", {
+    method: "POST",
+    body: JSON.stringify({
+      query,
+      variables,
+    }),
+    headers,
+  });
+
+  if (!response.ok) {
+    console.log(await response.text());
+    // TODO: Log failure
+    throw new Error("GraphQL request failed");
+  }
+
+  let body = await response.json();
+
+  if (body.errors) {
+    throw json(body.errors, 500);
+  }
+
+  return body.data;
+}
+
+export async function runEntryPoint(args: LoaderArgs, entryPoint: EntryPoint) {
+  const searchParams = new URL(args.request.url).searchParams;
+
+  const headers = new Headers();
+  headers.set("Content-Type", "application/json");
+  headers.set("Authorization", `bearer ${process.env.GITHUB_PAT}`);
+
+  let criticalPromise;
+  if (entryPoint.query) {
+    criticalPromise = runQuery(
+      entryPoint.query.query,
+      entryPoint.query.variables({
+        params: args.params,
+        searchParams,
+      }),
+      headers
+    );
+  }
+
+  let deferredPromises: Record<string, Promise<unknown>> = {};
+  if (entryPoint.deferredQueries) {
+    for (let [name, query] of Object.entries(entryPoint.deferredQueries)) {
+      deferredPromises["__" + name] = runQuery(
+        query.query,
+        query.variables({
+          params: args.params,
+          searchParams,
+        }),
+        headers
+      );
+    }
+  }
+
+  return defer({
+    ...deferredPromises,
+    criticalData: await criticalPromise,
+  });
+}
