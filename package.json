@@ -3,6 +3,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "remix build",
+    "codegen": "graphql-codegen",
     "dev": "remix dev",
     "start": "remix-serve build"
   },
@@ -16,11 +17,15 @@
     "urql": "^2.2.3"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "^2.11.6",
+    "@graphql-codegen/typescript": "^2.7.3",
+    "@graphql-codegen/typescript-operations": "^2.5.3",
     "@remix-run/dev": "0.0.0-experimental-93f053c3b",
     "@remix-run/eslint-config": "0.0.0-experimental-93f053c3b",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "eslint": "^8.20.0",
+    "remix-flat-routes": "^0.4.3",
     "typescript": "^4.7.4"
   },
   "engines": {

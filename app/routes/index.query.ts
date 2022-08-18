@@ -1,7 +1,8 @@
 import { graphql } from "~/graphql";
-
-type IndexCriticalQueryData = { viewer: { bioHTML: string; name: string } };
-type IndexCriticalQueryVariables = {};
+import type {
+  IndexCriticalQueryQuery,
+  IndexCriticalQueryQueryVariables,
+} from "~/graphql/types";
 
 type IndexDeferredFollowersQueryData = {
   viewer: { followers: { nodes: { login: string; name: string }[] } };
@@ -9,7 +10,7 @@ type IndexDeferredFollowersQueryData = {
 type IndexDeferredFollowersQueryVariables = {};
 
 export const entryPoint = {
-  query: graphql<IndexCriticalQueryData, IndexCriticalQueryVariables>`
+  query: graphql<IndexCriticalQueryQuery, IndexCriticalQueryQueryVariables>`
     query IndexCriticalQuery {
       viewer {
         bioHTML
