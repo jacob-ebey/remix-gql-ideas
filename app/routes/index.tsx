@@ -5,7 +5,9 @@ import type { LoaderArgs } from "@remix-run/node";
 import { runEntryPoint, useEntryPoint } from "~/graphql";
 import { entryPoint } from "./index.query";
 
-export const loader = (args: LoaderArgs) => runEntryPoint(args, entryPoint);
+export function loader(args: LoaderArgs) {
+  return runEntryPoint(args, entryPoint);
+}
 
 export default function Index() {
   const {
