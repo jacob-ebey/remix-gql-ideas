@@ -2,6 +2,7 @@ import type { LoaderArgs } from "@remix-run/node";
 import { defer, json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import type { Params } from "@remix-run/react";
+import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
 
 export interface EntryPoint<
   Query extends EntryPointQuery<unknown, unknown>,
@@ -34,7 +35,7 @@ export const graphql =
   };
 
 type Critical<TEntryPoint> = TEntryPoint extends EntryPoint<infer Data, any>
-  ? NonNullable<Data[" $data"]>
+  ? UseDataFunctionReturn<Data[" $data"]>
   : never;
 
 type Deferred<TEntryPoint> = TEntryPoint extends EntryPoint<any, infer Deferred>
@@ -43,7 +44,7 @@ type Deferred<TEntryPoint> = TEntryPoint extends EntryPoint<any, infer Deferred>
         infer Data,
         any
       >
-        ? Promise<Data>
+        ? Promise<UseDataFunctionReturn<Data>>
         : never;
     }
   : never;
